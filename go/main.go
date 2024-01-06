@@ -1,21 +1,38 @@
 package main
 
 import (
+	templates "boozedog/capwaspoc/templ"
+	"context"
+	"strings"
 	"syscall/js"
 
 	"github.com/a-h/templ"
 )
 
+// "context"
+// "os"
+
 func main() {
+
 	c := make(chan struct{}, 0)
 
-	// Define a simple component
-	helloWorld := templ.ComponentFunc(func() templ.Node {
-		return templ.Element("h1", nil, templ.Text("Hello, World!"))
+	var cb = js.FuncOf(func(_ js.Value, args []js.Value) interface{} {
+		path := args[0].String()
+		var component templ.Component
+
+		switch path {
+		case "home":
+			component = templates.Hello("Home")
+		case "about":
+			component = templates.Hello("About")
+		}
+
+		b := new(strings.Builder)
+		component.Render(context.Background(), b)
+		return b.String()
 	})
 
-	// Render the component
-	js.Global().Get("document").Call("getElementById", "app").Set("innerHTML", templ.RenderToString(helloWorld()))
+	js.Global().Set("go_wasm_handler", cb)
 
 	<-c
 }
